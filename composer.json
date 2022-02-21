@@ -1,0 +1,20 @@
+{
+  "name":"krabo/isotope-packaging-slip-order-status-update-bundle",
+  "description":"Isotope Packaging Slip Update Order status.",
+  "type": "contao-bundle",
+  "license":"AGPL-3.0-or-later",
+  "version": "1.0.0",
+  "require": {
+    "contao/core-bundle": "^4.9",
+    "isotope/isotope-core": "^2.6",
+    "krabo/isotope-packaging-slip-bundle": "^1.0.4"
+  },
+  "extra": {
+    "contao-manager-plugin": "Krabo\\IsotopePackagingSlipOrderStatusUpdateBundle\\ContaoManager\\Plugin"
+  },
+  "autoload": {
+    "psr-4": {
+      "Krabo\\IsotopePackagingSlipOrderStatusUpdateBundle\\": "src/"
+    }
+  }
+}
