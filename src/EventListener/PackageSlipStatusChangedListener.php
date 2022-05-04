@@ -19,6 +19,7 @@
 namespace Krabo\IsotopePackagingSlipOrderStatusUpdateBundle\EventListener;
 
 use Contao\System;
+use Isotope\Model\ProductCollection\Order;
 use Krabo\IsotopePackagingSlipBundle\Event\Events;
 use Krabo\IsotopePackagingSlipBundle\Event\StatusChangedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -60,22 +61,49 @@ class PackageSlipStatusChangedListener implements EventSubscriberInterface {
    * @return void
    */
   public function onStatusChanged(StatusChangedEvent $event) {
-    $configs = System::getContainer()->getParameter('krabo.isotope-packaging-slip-order-status_update.config');
-    $statusUpdated = false;
-    foreach($configs as $config) {
-      if ($config['packaging_slip_status'] == $event->getNewStatus()) {
-        foreach ($event->getPackagingSlip()->getOrders() as $order) {
-          if ($config['order_is_paid'] && $order->isPaid()) {
-            $order->updateOrderStatus($config['order_status_id']);
-            $statusUpdated = true;
-          } elseif (!$config['order_is_paid'] && !$order->isPaid()) {
-            $order->updateOrderStatus($config['order_status_id']);
-            $statusUpdated = true;
-          }
-        }
+    foreach ($event->getPackagingSlip()->getOrders() as $order) {
+      if ($order->isPaid()) {
+        $this->updatePaidStatus($order, $event->getNewStatus());
+      } else {
+        $this->updateUnpaidStatus($order, $event->getNewStatus());
       }
-      if ($statusUpdated) {
-        // Stop at the first processed rule.
+    }
+  }
+
+  /**
+   * @param \Isotope\Model\ProductCollection\Order $order
+   * @param $newPackagingSlipStatus
+   *
+   * @return void
+   */
+  protected function updatePaidStatus(Order $order, $newPackagingSlipStatus) {
+    if (!$order->isPaid()) {
+      return;
+    }
+    $configs = System::getContainer()->getParameter('krabo.isotope-packaging-slip-order-status_update.config');
+    foreach($configs as $config) {
+      if ($config['order_is_paid'] && $config['packaging_slip_status'] == $newPackagingSlipStatus) {
+        $order->updateOrderStatus($config['order_status_id']);
+        break;
+      }
+    }
+  }
+
+  /**
+   * @param \Isotope\Model\ProductCollection\Order $order
+   * @param $newPackagingSlipStatus
+   *
+   * @return void
+   */
+  protected function updateUnpaidStatus(Order $order, $newPackagingSlipStatus) {
+    if ($order->isPaid()) {
+      return;
+    }
+    $configs = System::getContainer()->getParameter('krabo.isotope-packaging-slip-order-status_update.config');
+    foreach($configs as $config) {
+      if (!$config['order_is_paid'] && $config['packaging_slip_status'] == $newPackagingSlipStatus) {
+        $order->updateOrderStatus($config['order_status_id']);
+        $this->updatePaidStatus($order, $newPackagingSlipStatus);
         break;
       }
     }
